@@ -51,7 +51,7 @@ class Messages extends ActionAbstract
         }
 
         return $this->response->build(200, [], [
-            'todos' => $result,
+            'messages' => $result,
         ]);
     }
 }
