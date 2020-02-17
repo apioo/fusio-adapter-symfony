@@ -28,16 +28,16 @@ use Fusio\Engine\ActionAbstract;
 use Fusio\Engine\ContextInterface;
 use Fusio\Engine\ParametersInterface;
 use Fusio\Engine\RequestInterface;
-use JMS\Serializer\ArrayTransformerInterface;
 use JMS\Serializer\SerializerBuilder;
 
 class Messages extends ActionAbstract
 {
     public function handle(RequestInterface $request, ParametersInterface $configuration, ContextInterface $context)
     {
+        /** @var \Doctrine\ORM\EntityManager $entityManager */
         $entityManager = $this->connector->getConnection('doctrine');
 
-        /** @var ArrayTransformerInterface $serializer */
+        /** @var \JMS\Serializer\ArrayTransformerInterface $serializer */
         $serializer = SerializerBuilder::create()->build();
 
         $dql = "SELECT m FROM App\Entity\Message m ORDER BY m.id DESC";
