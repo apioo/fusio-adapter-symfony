@@ -3,7 +3,7 @@
  * Fusio
  * A web-application to create dynamically RESTful APIs
  *
- * Copyright (C) 2015-2020 Christoph Kappestein <christoph.kappestein@gmail.com>
+ * Copyright (C) 2015-2022 Christoph Kappestein <christoph.kappestein@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -34,20 +34,16 @@ use Fusio\Engine\ParametersInterface;
  *
  * @author  Christoph Kappestein <christoph.kappestein@gmail.com>
  * @license http://www.gnu.org/licenses/agpl-3.0
- * @link    http://fusio-project.org
+ * @link    https://www.fusio-project.org/
  */
 class Doctrine implements ConnectionInterface
 {
-    public function getName()
+    public function getName(): string
     {
         return 'Doctrine';
     }
 
-    /**
-     * @param \Fusio\Engine\ParametersInterface $config
-     * @return \Doctrine\ORM\EntityManager
-     */
-    public function getConnection(ParametersInterface $config)
+    public function getConnection(ParametersInterface $config): EntityManager
     {
         if ($config->get('mode') === 'dev') {
             $configuration = Setup::createAnnotationMetadataConfiguration(
@@ -78,7 +74,7 @@ class Doctrine implements ConnectionInterface
         return EntityManager::create($connection, $configuration);
     }
 
-    public function configure(BuilderInterface $builder, ElementFactoryInterface $elementFactory)
+    public function configure(BuilderInterface $builder, ElementFactoryInterface $elementFactory): void
     {
         $drivers = ['pdo_mysql', 'mysqli', 'pdo_pgsql', 'pdo_sqlsrv', 'sqlsrv', 'oci8', 'sqlanywhere'];
         $drivers = array_combine($drivers, $drivers);
