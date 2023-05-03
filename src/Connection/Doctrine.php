@@ -22,12 +22,17 @@
 namespace Fusio\Adapter\Symfony\Connection;
 
 use Doctrine\Common\Cache\PhpFileCache;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Tools\Setup;
 use Fusio\Engine\ConnectionInterface;
 use Fusio\Engine\Form\BuilderInterface;
 use Fusio\Engine\Form\ElementFactoryInterface;
 use Fusio\Engine\ParametersInterface;
+use Psr\SimpleCache\CacheInterface;
+use Symfony\Component\Cache\Adapter\Psr16Adapter;
 
 /**
  * Doctrine
@@ -38,6 +43,15 @@ use Fusio\Engine\ParametersInterface;
  */
 class Doctrine implements ConnectionInterface
 {
+    private Connection $connection;
+    private CacheInterface $cache;
+
+    public function __construct(Connection $connection, CacheInterface $cache)
+    {
+        $this->connection = $connection;
+        $this->cache = $cache;
+    }
+
     public function getName(): string
     {
         return 'Doctrine';
@@ -45,45 +59,17 @@ class Doctrine implements ConnectionInterface
 
     public function getConnection(ParametersInterface $config): EntityManager
     {
-        if ($config->get('mode') === 'dev') {
-            $configuration = Setup::createAnnotationMetadataConfiguration(
-                [PSX_PATH_SRC . '/Entity'],
-                true,
-                null,
-                null,
-                false
-            );
-        } else {
-            $configuration = Setup::createAnnotationMetadataConfiguration(
-                [PSX_PATH_SRC . '/Entity'],
-                false,
-                PSX_PATH_CACHE . '/doctrine/proxy',
-                new PhpFileCache(PSX_PATH_CACHE . '/doctrine/cache'),
-                false
-            );
-        }
+        $paths = $config->get('paths');
+        $isDevMode = $config->get('mode') === 'dev';
 
-        $connection =  [
-            'dbname' => $config->get('database'),
-            'user' => $config->get('username'),
-            'password' => $config->get('password'),
-            'host' => $config->get('host'),
-            'driver' => $config->get('driver') ?: 'pdo_mysql',
-        ];
+        $configuration = ORMSetup::createAttributeMetadataConfiguration($paths, $isDevMode, null, new Psr16Adapter($this->cache));
 
-        return EntityManager::create($connection, $configuration);
+        return new EntityManager($this->connection, $configuration);
     }
 
     public function configure(BuilderInterface $builder, ElementFactoryInterface $elementFactory): void
     {
-        $drivers = ['pdo_mysql', 'mysqli', 'pdo_pgsql', 'pdo_sqlsrv', 'sqlsrv', 'oci8', 'sqlanywhere'];
-        $drivers = array_combine($drivers, $drivers);
-
-        $builder->add($elementFactory->newSelect('driver', 'Driver', $drivers, 'Doctrine driver'));
-        $builder->add($elementFactory->newInput('host', 'Host', 'text', 'The database host'));
-        $builder->add($elementFactory->newInput('database', 'Database', 'text', 'The database name'));
-        $builder->add($elementFactory->newInput('username', 'Username', 'text', 'The database username'));
-        $builder->add($elementFactory->newInput('password', 'Password', 'text', 'The database password'));
+        $builder->add($elementFactory->newCollection('paths', 'Path', 'text', 'Entity folder'));
         $builder->add($elementFactory->newSelect('mode', 'Mode', ['dev' => 'Development', 'prod' => 'Production'], 'Setup the entity manager in development or production mode'));
     }
 }
